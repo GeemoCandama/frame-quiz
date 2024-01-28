@@ -25,27 +25,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             }
 
             let validatedMessage : Message | undefined = undefined;
-            //try {
-            //    const frameMessage = Message.decode(Buffer.from(req.body?.trustedData?.messageBytes || '', 'hex'));
-            //    const result = await client.validateMessage(frameMessage);
-            //    if (result.isOk() && result.value.valid) {
-            //        validatedMessage = result.value.message;
-            //    }
-            //} catch (e)  {
-            //    return res.status(400).send(`Failed to validate message: ${e}`);
-            //}
+            try {
+                const frameMessage = Message.decode(Buffer.from(req.body?.trustedData?.messageBytes || '', 'hex'));
+                const result = await client.validateMessage(frameMessage);
+                if (result.isOk() && result.value.valid) {
+                    validatedMessage = result.value.message;
+                }
+            } catch (e)  {
+                return res.status(400).send(`Failed to validate message: ${e}`);
+            }
 
             // notice: MAKE SURE TO CHANGE THIS
-            const buttonId = 1;
-            const fid = 0;
+            const buttonId = validatedMessage?.data?.frameActionBody?.buttonIndex || 0;
+            const fid = validatedMessage?.data?.fid || 0;
             const answeredOption = await kv.hget(`quiz:${quizId}:complete`, `${fid}`)
             const answered = !!answeredOption;
             let complete = false;
-            //@ts-ignore
-            quiz.questions[questionId][`answer${buttonId}`] += 1;
-            
-            await kv.hset(`quiz:${quizId}`, quiz);
-            if (buttonId > 0 && buttonId < 5 && !results && questionId < quiz.questions.length && questionId > 0) {
+
+            if (buttonId > 0 && buttonId < 5 && !results && !answered && questionId < quiz.questions.length && questionId >= 0) {
                 let multi = kv.multi();
                 //@ts-ignore
                 quiz.questions[questionId][`answer${buttonId}`] += 1;
