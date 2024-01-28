@@ -23,7 +23,8 @@ function getPercentCorrect(question: Question): number {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     try {
-        const quizId = req.query['id']
+        const quizId = req.query['id'];
+        const questionId = parseInt(req.query['qid']?.toString() || '');
         // const fid = parseInt(req.query['fid']?.toString() || '')
         if (!quizId) {
             return res.status(400).send('Missing quiz ID');
@@ -33,8 +34,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
 
         if (!quiz) {
-            return res.status(400).send('Missing poll ID');
+            return res.status(400).send('Invalid quiz ID');
         }
+
+        let validQuestionId: number | null = questionId  < quiz.questions.length ? questionId : null;
 
         const showResults = req.query['results'] === 'true'
         // let votedOption: number | null = null
@@ -75,22 +78,63 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     flexDirection: 'column',
                     padding: 20,
                 }}>
-                    <h2 style={{textAlign: 'center', color: 'lightgray'}}>{quiz.title}</h2>
+                    <h2 style={{textAlign: 'center', color: 'lightgray'}}>{validQuestionId ? quiz.questions[validQuestionId].questionText : quiz.title}</h2>
                     {
-                        quizData.questions.map((q, index) => {
-                            return (
-                                <div style={{
-                                    backgroundColor:  showResults ? '#007bff' : '',
-                                    color: '#fff',
-                                    padding: 10,
-                                    marginBottom: 10,
-                                    borderRadius: 4,
-                                    width: `${showResults ? q.percentCorrect : 100}%`,
-                                    whiteSpace: 'nowrap',
-                                    overflow: 'visible',
-                                }}>{q.text}</div>
-                            )
-                        })
+                        (validQuestionId) ? (
+                          <>
+                           <div style={{
+                                color: '#fff',
+                                padding: 10,
+                                marginBottom: 10,
+                                borderRadius: 4,
+                                width: `100%`,
+                                whiteSpace: 'nowrap',
+                                overflow: 'visible',
+                            }}>{quiz.questions[validQuestionId].option1}</div>
+                           <div style={{
+                                color: '#fff',
+                                padding: 10,
+                                marginBottom: 10,
+                                borderRadius: 4,
+                                width: `100%`,
+                                whiteSpace: 'nowrap',
+                                overflow: 'visible',
+                            }}>{quiz.questions[validQuestionId].option1}</div>
+                           <div style={{
+                                color: '#fff',
+                                padding: 10,
+                                marginBottom: 10,
+                                borderRadius: 4,
+                                width: `100%`,
+                                whiteSpace: 'nowrap',
+                                overflow: 'visible',
+                            }}>{quiz.questions[validQuestionId].option1}</div>
+                           <div style={{
+                                color: '#fff',
+                                padding: 10,
+                                marginBottom: 10,
+                                borderRadius: 4,
+                                width: `100%`,
+                                whiteSpace: 'nowrap',
+                                overflow: 'visible',
+                            }}>{quiz.questions[validQuestionId].option1}</div>
+                          </>
+                        ) : (
+                            quizData.questions.map((q, index) => {
+                                return (
+                                    <div style={{
+                                        backgroundColor:  showResults ? '#007bff' : '',
+                                        color: '#fff',
+                                        padding: 10,
+                                        marginBottom: 10,
+                                        borderRadius: 4,
+                                        width: `${showResults ? q.percentCorrect : 100}%`,
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'visible',
+                                    }}>{q.text}</div>
+                                )
+                            })
+                        )
                     }
                     {showResults ? <h3 style={{color: "darkgray"}}>Average Score: {quizAverage} (Taken: {timesTaken})</h3> : ''}
                 </div>
