@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import sharp from 'sharp';
-import {Poll} from "@/app/types";
+import {Quiz, Question} from "@/app/types";
 import {kv} from "@vercel/kv";
 import satori from "satori";
 import { join } from 'path';
@@ -9,18 +9,30 @@ import * as fs from "fs";
 const fontPath = join(process.cwd(), 'Roboto-Regular.ttf')
 let fontData = fs.readFileSync(fontPath)
 
+export function getTotalAnswers(question: Question): number {
+    return question.answer1 + question.answer2 + question.answer3 + question.answer4;
+}
+
+function getPercentCorrect(question: Question): number {
+    const totalAnswers = getTotalAnswers(question);
+    if (totalAnswers === 0) return 0;
+
+    const correctAnswersCount = question[`answer${question.correctAnswerIndex}` as keyof Question] as number;
+    return (correctAnswersCount / totalAnswers) * 100;
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     try {
-        const pollId = req.query['id']
+        const quizId = req.query['id']
         // const fid = parseInt(req.query['fid']?.toString() || '')
-        if (!pollId) {
-            return res.status(400).send('Missing poll ID');
+        if (!quizId) {
+            return res.status(400).send('Missing quiz ID');
         }
 
-        let poll: Poll | null = await kv.hgetall(`poll:${pollId}`);
+        let quiz: Quiz | null = await kv.hgetall(`quiz:${quizId}`);
 
 
-        if (!poll) {
+        if (!quiz) {
             return res.status(400).send('Missing poll ID');
         }
 
@@ -30,21 +42,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         //     votedOption = await kv.hget(`poll:${pollId}:votes`, `${fid}`) as number
         // }
 
-        const pollOptions = [poll.option1, poll.option2, poll.option3, poll.option4]
-            .filter((option) => option !== '');
-        const totalVotes = pollOptions
-            // @ts-ignore
-            .map((option, index) => parseInt(poll[`votes${index+1}`]))
-            .reduce((a, b) => a + b, 0);
-        const pollData = {
-            question: showResults ? `Results for ${poll.title}` : poll.title,
-            options: pollOptions
-                .map((option, index) => {
+        // const pollOptions = [poll.option1, poll.option2, poll.option3, poll.option4]
+        const percentCorrectArr = quiz.questions.map(question => getPercentCorrect(question));
+        const quizAverage = percentCorrectArr.length > 0 ? percentCorrectArr.reduce((sum, percent) => sum + percent, 0) / percentCorrectArr.length : 0;
+        const timesTaken = quiz.questions.length > 0 ? getTotalAnswers(quiz.questions[0]) : 0;
+        const quizData = {
+            quiz: showResults ? `Results for ${quiz.title}` : quiz.title,
+            quizAverage: showResults ? `${quizAverage}%` : '',
+            questions: quiz.questions
+                .map((question, index) => {
                     // @ts-ignore
-                    const votes = poll[`votes${index+1}`]
-                    const percentOfTotal = totalVotes ? Math.round(votes / totalVotes * 100) : 0;
-                    let text = showResults ? `${percentOfTotal}%: ${option} (${votes} votes)` : `${index + 1}. ${option}`
-                    return { option, votes, text, percentOfTotal }
+                    let percentCorrect = percentCorrectArr[index];
+                    let text = showResults ? `${percentCorrectArr[index]}%: ${question.questionText}` : `${index + 1}. ${question.questionText}`
+                    return { question, text, percentCorrect}
                 })
         };
 
@@ -65,9 +75,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     flexDirection: 'column',
                     padding: 20,
                 }}>
-                    <h2 style={{textAlign: 'center', color: 'lightgray'}}>{poll.title}</h2>
+                    <h2 style={{textAlign: 'center', color: 'lightgray'}}>{quiz.title}</h2>
                     {
-                        pollData.options.map((opt, index) => {
+                        quizData.questions.map((q, index) => {
                             return (
                                 <div style={{
                                     backgroundColor:  showResults ? '#007bff' : '',
@@ -75,14 +85,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                                     padding: 10,
                                     marginBottom: 10,
                                     borderRadius: 4,
-                                    width: `${showResults ? opt.percentOfTotal : 100}%`,
+                                    width: `${showResults ? q.percentCorrect : 100}%`,
                                     whiteSpace: 'nowrap',
                                     overflow: 'visible',
-                                }}>{opt.text}</div>
+                                }}>{q.text}</div>
                             )
                         })
                     }
-                    {/*{showResults ? <h3 style={{color: "darkgray"}}>Total votes: {totalVotes}</h3> : ''}*/}
+                    {showResults ? <h3 style={{color: "darkgray"}}>Average Score: {quizAverage} (Taken: {timesTaken})</h3> : ''}
                 </div>
             </div>
             ,

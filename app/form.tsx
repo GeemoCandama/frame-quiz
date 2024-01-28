@@ -2,50 +2,67 @@
 
 import clsx from "clsx";
 import {useOptimistic, useRef, useState, useTransition} from "react";
-import {redirectToPolls, savePoll, votePoll} from "./actions";
+import {answerQuiz, redirectToQuizzes, saveQuiz, votePoll} from "./actions";
 import { v4 as uuidv4 } from "uuid";
-import {Poll} from "./types";
+import {Quiz, Question} from "./types";
 import {useRouter, useSearchParams} from "next/navigation";
 
-type PollState = {
-  newPoll: Poll;
-  updatedPoll?: Poll;
+type QuizState = {
+  newQuiz: Quiz;
+  updatedPoll?: Quiz;
   pending: boolean;
-  voted?: boolean;
+  answered?: boolean;
 };
 
 
-export function PollCreateForm() {
-  let formRef = useRef<HTMLFormElement>(null);
+function createNewQuizQuestion(): Question {
+  return {
+    questionText: '',
+    option1: '',
+    option2: '',
+    option3: '',
+    option4: '',
+    answer1: 0,
+    answer2: 0,
+    answer3: 0,
+    answer4: 0,
+    correctAnswerIndex: 1
+  };
+}
+
+export function QuizCreateForm() {
+  let [questions, setQuestions] = useState([createNewQuizQuestion()]);
+  let quizRef = useRef<HTMLFormElement>(null);
   let [state, mutate] = useOptimistic(
       { pending: false },
-      function createReducer(state, newPoll: PollState) {
-        if (newPoll.newPoll) {
+      function createReducer(state, newQuiz: QuizState) {
+        if (newQuiz.newQuiz) {
           return {
-            pending: newPoll.pending,
+            pending: newQuiz.pending,
           };
         } else {
           return {
-            pending: newPoll.pending,
+            pending: newQuiz.pending,
           };
         }
       },
   );
 
-  let pollStub = {
+  const addNewQuestion = () => {
+    setQuestions([
+        ...questions,
+        createNewQuizQuestion()
+    ]);
+  };
+
+  let quizStub = {
     id: uuidv4(),
     created_at: new Date().getTime(),
     title: "",
-    option1: "",
-    option2: "",
-    option3: "",
-    option4: "",
-    votes1: 0,
-    votes2: 0,
-    votes3: 0,
-    votes4: 0,
+    questions: [createNewQuizQuestion()]
+
   };
-  let saveWithNewPoll = savePoll.bind(null, pollStub);
+  let saveWithNewQuiz = saveQuiz.bind(null, quizStub);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   let [isPending, startTransition] = useTransition();
 
@@ -54,37 +71,46 @@ export function PollCreateForm() {
         <div className="mx-8 w-full">
           <form
               className="relative my-8"
-              ref={formRef}
-              action={saveWithNewPoll}
+              ref={quizRef}
+              action={saveWithNewQuiz}
               onSubmit={(event) => {
                 event.preventDefault();
                 let formData = new FormData(event.currentTarget);
-                let newPoll = {
-                  ...pollStub,
+                let questions = [];
+
+                for (let i = 0; i < questions.length; i++) {
+                  questions.push({
+                    questionText: formData.get(`question${i}`) as string,
+                    option1: formData.get(`option1-${i}`) as string,
+                    option2: formData.get(`option1-${i}`) as string,
+                    option3: formData.get(`option1-${i}`) as string,
+                    option4: formData.get(`option1-${i}`) as string,
+                    answer1: 0,
+                    answer2: 0,
+                    answer3: 0,
+                    answer4: 0,
+                    correctAnswerIndex: parseInt(formData.get(`correctAnswer`) as string)
+                  });
+                }
+                let newQuiz = {
+                  ...quizStub,
                   title: formData.get("title") as string,
-                  option1: formData.get("option1") as string,
-                  option2: formData.get("option2") as string,
-                  option3: formData.get("option3") as string,
-                  option4: formData.get("option4") as string,
-                  votes1: 0,
-                  votes2: 0,
-                  votes3: 0,
-                  votes4: 0,
+                  questions: questions,
                 };
 
-                formRef.current?.reset();
+                quizRef.current?.reset();
                 startTransition(async () => {
                   mutate({
-                    newPoll,
+                    newQuiz,
                     pending: true,
                   });
 
-                  await savePoll(newPoll, formData);
+                  await saveQuiz(newQuiz, formData);
                 });
               }}
           >
             <input
-                aria-label="Poll Title"
+                aria-label="Quiz Title"
                 className="pl-3 pr-28 py-3 mt-1 text-lg block w-full border border-gray-200 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring focus:ring-blue-300"
                 maxLength={150}
                 placeholder="Title..."
@@ -92,40 +118,70 @@ export function PollCreateForm() {
                 type="text"
                 name="title"
             />
-            <input
-                aria-label="Option 1"
-                className="pl-3 pr-28 py-3 mt-1 text-lg block w-full border border-gray-200 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring focus:ring-blue-300"
-                maxLength={150}
-                placeholder="Option 1"
-                required
-                type="text"
-                name="option1"
-            />
-            <input
-                aria-label="Option 2"
-                className="pl-3 pr-28 py-3 mt-1 text-lg block w-full border border-gray-200 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring focus:ring-blue-300"
-                maxLength={150}
-                placeholder="Option 2"
-                required
-                type="text"
-                name="option2"
-            />
-            <input
-                aria-label="Option 3"
-                className="pl-3 pr-28 py-3 mt-1 text-lg block w-full border border-gray-200 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring focus:ring-blue-300"
-                maxLength={150}
-                placeholder="Option 3 (optional)"
-                type="text"
-                name="option3"
-            />
-            <input
-                aria-label="Option 4"
-                className="pl-3 pr-28 py-3 mt-1 text-lg block w-full border border-gray-200 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring focus:ring-blue-300"
-                maxLength={150}
-                placeholder="Option 4 (optional)"
-                type="text"
-                name="option4"
-            />
+
+            {questions.map((question, index) => (
+                <div className="question" key={index}>
+                    <input
+                        aria-label="Question Text"
+                        className="pl-3 pr-28 py-3 mt-1 text-lg block w-full border border-gray-200 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring focus:ring-blue-300"
+                        placeholder="Question text"
+                        required
+                        type="text"
+                        name={`question${index}`}
+                    />
+                    <input
+                        aria-label="Option 1"
+                        className="pl-3 pr-28 py-3 mt-1 text-lg block w-full border border-gray-200 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring focus:ring-blue-300"
+                        maxLength={150}
+                        placeholder="Option 1"
+                        required
+                        type="text"
+                        name={`option1-${index}`}
+                    />
+                    <input
+                        aria-label="Option 2"
+                        className="pl-3 pr-28 py-3 mt-1 text-lg block w-full border border-gray-200 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring focus:ring-blue-300"
+                        maxLength={150}
+                        placeholder="Option 2"
+                        required
+                        type="text"
+                        name={`option2-${index}`}
+                    />
+                    <input
+                        aria-label="Option 3"
+                        className="pl-3 pr-28 py-3 mt-1 text-lg block w-full border border-gray-200 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring focus:ring-blue-300"
+                        maxLength={150}
+                        placeholder="Option 3"
+                        required
+                        type="text"
+                        name={`option3-${index}`}
+                    />
+                    <input
+                        aria-label="Option 4"
+                        className="pl-3 pr-28 py-3 mt-1 text-lg block w-full border border-gray-200 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring focus:ring-blue-300"
+                        maxLength={150}
+                        placeholder="Option 4"
+                        required
+                        type="text"
+                        name={`option4-${index}`}
+                    />
+                    <input
+                        aria-label="Correct Answer Index"
+                        className="pl-3 pr-28 py-3 mt-1 text-lg block w-full border border-gray-200 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring focus:ring-blue-300"
+                        placeholder="Correct answer index ex: 1-4"
+                        required
+                        type="number"
+                        name={`correctAnswer-${index}`}
+                    />
+                </div>
+            ))}
+
+            <button 
+                type="button" 
+                onClick={() => addNewQuestion()}
+            >
+                Add Question
+            </button>
               <div className={"pt-2 flex justify-end"}>
                   <button
                       className={clsx(
@@ -146,45 +202,45 @@ export function PollCreateForm() {
   );
 }
 
-function PollOptions({poll, onChange} : {poll: Poll, onChange: (index: number) => void}) {
-    return (
-        <div className="mb-4 text-left">
-            {[poll.option1, poll.option2, poll.option3, poll.option4].filter(e => e !== "").map((option, index) => (
-                <label key={index} className="block">
-                    <input
-                        type="radio"
-                        name="poll"
-                        value={option}
-                        onChange={() => onChange(index + 1)}
-                        className="mr-2"
-                    />
-                    {option}
-                </label>
-            ))}
-        </div>
-    );
-}
+// function PollOptions({poll, onChange} : {poll: Poll, onChange: (index: number) => void}) {
+//     return (
+//         <div className="mb-4 text-left">
+//             {[poll.option1, poll.option2, poll.option3, poll.option4].filter(e => e !== "").map((option, index) => (
+//                 <label key={index} className="block">
+//                     <input
+//                         type="radio"
+//                         name="poll"
+//                         value={option}
+//                         onChange={() => onChange(index + 1)}
+//                         className="mr-2"
+//                     />
+//                     {option}
+//                 </label>
+//             ))}
+//         </div>
+//     );
+// }
 
-function PollResults({poll} : {poll: Poll}) {
-    return (
-        <div className="mb-4">
-            <img src={`/api/image?id=${poll.id}&results=true&date=${Date.now()}`} alt='poll results'/>
-        </div>
-    );
-}
+function QuizResults({quiz} : {quiz: Quiz}) {
+     return (
+         <div className="mb-4">
+             <img src={`/api/image?id=${quiz.id}&results=true&date=${Date.now()}`} alt='quiz results'/>
+         </div>
+     );
+ }
 
-export function PollVoteForm({poll, viewResults}: { poll: Poll, viewResults?: boolean }) {
+export function QuizAnswerForm({quiz, viewResults}: { quiz: Quiz, viewResults?: boolean }) {
     const [selectedOption, setSelectedOption] = useState(-1);
     const router = useRouter();
     const searchParams = useSearchParams();
-    viewResults = true;     // Only allow voting via the api
+    viewResults = true;     // Only allow taking quiz via the api
     let formRef = useRef<HTMLFormElement>(null);
-    let voteOnPoll = votePoll.bind(null, poll);
+    let answerOnQuiz = answerQuiz.bind(null, quiz);
     let [isPending, startTransition] = useTransition();
     let [state, mutate] = useOptimistic(
         { showResults: viewResults },
-        function createReducer({showResults}, state: PollState) {
-            if (state.voted || viewResults) {
+        function createReducer({showResults}, state: QuizState) {
+            if (state.answered || viewResults) {
                 return {
                     showResults: true,
                 };
@@ -196,13 +252,13 @@ export function PollVoteForm({poll, viewResults}: { poll: Poll, viewResults?: bo
         },
     );
 
-    const handleVote = (index: number) => {
-        setSelectedOption(index)
-    };
-
+//    const handleVote = (index: number) => {
+//        setSelectedOption(index)
+//    };
+//
     return (
         <div className="max-w-sm rounded overflow-hidden shadow-lg p-4 m-4">
-            <div className="font-bold text-xl mb-2">{poll.title}</div>
+            <div className="font-bold text-xl mb-2">{quiz.title}</div>
             <form
                 className="relative my-8"
                 ref={formRef}
@@ -210,28 +266,27 @@ export function PollVoteForm({poll, viewResults}: { poll: Poll, viewResults?: bo
                 onSubmit={(event) => {
                     event.preventDefault();
                     let formData = new FormData(event.currentTarget);
-                    let newPoll = {
-                        ...poll,
+                    let newQuiz = {
+                        ...quiz,
                     };
 
                     // @ts-ignore
-                    newPoll[`votes${selectedOption}`] += 1;
-
+                    newQuiz[`votes${selectedOption}`] += 1;
 
                     formRef.current?.reset();
                     startTransition(async () => {
                         mutate({
-                            newPoll,
+                            newQuiz,
                             pending: false,
-                            voted: true,
+                            answered: true,
                         });
 
-                        await redirectToPolls();
+//                        await redirectToPolls();
                         // await votePoll(newPoll, selectedOption);
                     });
                 }}
             >
-                {state.showResults ? <PollResults poll={poll}/> : <PollOptions poll={poll} onChange={handleVote}/>}
+                {state.showResults ? <QuizResults quiz={quiz}/> : <PollOptions poll={poll} onChange={handleVote}/>}
                 {state.showResults ? <button
                         className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
                         type="submit"

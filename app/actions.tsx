@@ -2,36 +2,51 @@
 
 import { kv } from "@vercel/kv";
 import { revalidatePath } from "next/cache";
-import {Poll} from "./types";
+import {Quiz} from "./types";
 import {redirect} from "next/navigation";
 
-export async function savePoll(poll: Poll, formData: FormData) {
-  let newPoll = {
-    ...poll,
+export async function saveQuiz(quiz: Quiz, formData: FormData) {
+  let updatedQuestions = quiz.questions.map((q, index) => ({
+      ...q,
+      questionText: formData.get(`question${index}`) as string,
+      option1: formData.get(`option1-${index}`) as string,
+      option2: formData.get(`option2-${index}`) as string,
+      option3: formData.get(`option3-${index}`) as string,
+      option4: formData.get(`option4-${index}`) as string,
+      answer1: 0,
+      answer2: 0,
+      answer3: 0,
+      answer4: 0,
+      correctAnswerIndex: parseInt(formData.get(`correctAnswer-${index}`) as string),
+  }));
+
+  let newQuiz = {
+    ...quiz,
     created_at: Date.now(),
     title: formData.get("title") as string,
-    option1: formData.get("option1") as string,
-    option2: formData.get("option2") as string,
-    option3: formData.get("option3") as string,
-    option4: formData.get("option4") as string,
+    questions: updatedQuestions,
   }
-  await kv.hset(`poll:${poll.id}`, poll);
-  await kv.zadd("polls_by_date", {
-    score: Number(poll.created_at),
-    member: newPoll.id,
+
+  await kv.hset(`quiz:${quiz.id}`, quiz);
+  await kv.zadd("quiz_by_date", {
+    score: Number(newQuiz.created_at),
+    member: newQuiz.id,
   });
 
-  revalidatePath("/polls");
-  redirect(`/polls/${poll.id}`);
+  revalidatePath("/quizzes");
+  redirect(`/quizzes/${quiz.id}`);
 }
 
-export async function votePoll(poll: Poll, optionIndex: number) {
-  await kv.hincrby(`poll:${poll.id}`, `votes${optionIndex}`, 1);
+export async function answerQuiz(quiz: Quiz, answers: number[]) {
+  answers.forEach(async (answerIndex, questionIndex) => {
+    const answerField = `answer${answerIndex}`;
+    await kv.hincrby(`quiz:${quiz.id}:question:${questionIndex}`, answerField, 1);
+  });
 
-  revalidatePath(`/polls/${poll.id}`);
-  redirect(`/polls/${poll.id}?results=true`);
+  revalidatePath(`/quizzes/${quiz.id}`);
+  redirect(`/quizzes/${quiz.id}?results=true`);
 }
 
-export async function redirectToPolls() {
-  redirect("/polls");
+export async function redirectToQuizzes() {
+  redirect("/quizzes");
 }
