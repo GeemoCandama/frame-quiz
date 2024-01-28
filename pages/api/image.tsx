@@ -96,9 +96,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                                 return (
                                     <div style={{
                                         backgroundColor:  showResults ? '#007bff' : '',
+                                        fontSize: '14px',
                                         color: '#fff',
-                                        padding: 10,
-                                        marginBottom: 10,
+                                        padding: 2,
+                                        marginBottom: 2,
                                         borderRadius: 4,
                                         width: `${showResults ? q.percentCorrect : 100}%`,
                                         whiteSpace: 'nowrap',
