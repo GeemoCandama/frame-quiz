@@ -1,7 +1,7 @@
 import {QuizCreateForm} from "./form";
 
 export let metadata = {
-  title: "Farcaster polls",
+  title: "Farcaster quizzes",
   description: "Quiz example for farcaster",
 };
 

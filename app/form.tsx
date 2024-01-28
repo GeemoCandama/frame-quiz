@@ -32,6 +32,7 @@ function createNewQuizQuestion(): Question {
 
 export function QuizCreateForm() {
   let [questions, setQuestions] = useState([createNewQuizQuestion()]);
+  let [numQuestions, setNumQuestions] = useState(1);
   let quizRef = useRef<HTMLFormElement>(null);
   let [state, mutate] = useOptimistic(
       { pending: false },
@@ -49,6 +50,7 @@ export function QuizCreateForm() {
   );
 
   const addNewQuestion = () => {
+    setNumQuestions(numQuestions + 1);
     setQuestions([
         ...questions,
         createNewQuizQuestion()
@@ -78,18 +80,18 @@ export function QuizCreateForm() {
                 let formData = new FormData(event.currentTarget);
                 let questions = [];
 
-                for (let i = 0; i < questions.length; i++) {
+                for (let i = 0; i < numQuestions; i++) {
                   questions.push({
                     questionText: formData.get(`question${i}`) as string,
                     option1: formData.get(`option1-${i}`) as string,
-                    option2: formData.get(`option1-${i}`) as string,
-                    option3: formData.get(`option1-${i}`) as string,
-                    option4: formData.get(`option1-${i}`) as string,
+                    option2: formData.get(`option2-${i}`) as string,
+                    option3: formData.get(`option3-${i}`) as string,
+                    option4: formData.get(`option4-${i}`) as string,
                     answer1: 0,
                     answer2: 0,
                     answer3: 0,
                     answer4: 0,
-                    correctAnswerIndex: parseInt(formData.get(`correctAnswer`) as string)
+                    correctAnswerIndex: parseInt(formData.get(`correctAnswer-${i}`) as string)
                   });
                 }
                 let newQuiz = {
@@ -222,6 +224,7 @@ function QuestionOptions({quiz, questionIndex, onChange} : {quiz: Quiz, question
 }
 
 function QuizResults({quiz} : {quiz: Quiz}) {
+    console.log(quiz);
      return (
          <div className="mb-4">
              <img src={`/api/image?id=${quiz.id}&results=true&date=${Date.now()}`} alt='quiz results'/>

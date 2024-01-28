@@ -53,7 +53,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 .map((question, index) => {
                     // @ts-ignore
                     let percentCorrect = percentCorrectArr[index];
-                    let text = showResults ? `${percentCorrectArr[index]}%: ${question.questionText}` : `${index + 1}. ${question.questionText}`
+                    let text = showResults ? `${percentCorrectArr[index]}%: ${question.questionText}` : `${index + 1}. ${question.questionText}`;
                     return { question, text, percentCorrect}
                 })
         };
