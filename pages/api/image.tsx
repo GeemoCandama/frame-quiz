@@ -25,7 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     try {
         const quizId = req.query['id'];
         const questionId = parseInt(req.query['qid']?.toString() || '');
-        // const fid = parseInt(req.query['fid']?.toString() || '')
+        const fid = parseInt(req.query['fid']?.toString() || '')
         if (!quizId) {
             return res.status(400).send('Missing quiz ID');
         }
@@ -41,9 +41,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         const showResults = req.query['results'] === 'true'
         // let votedOption: number | null = null
-        // if (showResults && fid > 0) {
-        //     votedOption = await kv.hget(`poll:${pollId}:votes`, `${fid}`) as number
-        // }
+        let userCorrectAnswers = 0;
+        if (showResults && fid > 0) {
+            quiz.questions.forEach(async (question, index) => {
+                let userAnswer = await kv.hget(`quiz:${quizId}:${index}`, `${fid}`);
+                if (question.correctAnswerIndex === userAnswer) {
+                    userCorrectAnswers += 1;
+                }
+            });
+        }
 
         // const pollOptions = [poll.option1, poll.option2, poll.option3, poll.option4]
         const percentCorrectArr = quiz.questions.map(question => getPercentCorrect(question));
@@ -136,6 +142,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                             })
                         )
                     }
+                    {(showResults && fid > 0) ? <h3 style={{color: "darkgray"}}>Your Score: {userCorrectAnswers}/{quiz.questions.length}</h3> : ''}
                     {showResults ? <h3 style={{color: "darkgray"}}>Average Score: {quizAverage} (Taken: {timesTaken})</h3> : ''}
                 </div>
             </div>
