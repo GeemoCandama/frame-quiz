@@ -43,12 +43,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         // let votedOption: number | null = null
         let userCorrectAnswers = 0;
         if (showResults && fid > 0) {
-            quiz.questions.forEach(async (question, index) => {
-                let userAnswer = await kv.hget(`quiz:${quizId}:${index}`, `${fid}`);
-                if (question.correctAnswerIndex === userAnswer) {
-                    userCorrectAnswers += 1;
+            for (let i = 0; i < quiz.questions.length; i ++ ) {
+                const correctAnswer = quiz.questions[i].correctAnswerIndex;
+                let userAnswer = await kv.hget(`quiz:${quizId}:${i}`, `${fid}`)
+
+                if (correctAnswer === userAnswer) {
+                    userCorrectAnswers++;
                 }
-            });
+            }
         }
 
         // const pollOptions = [poll.option1, poll.option2, poll.option3, poll.option4]
@@ -88,42 +90,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     {
                         (validQuestionId != null) ? (
                           <>
-                           <div style={{
-                                color: '#fff',
-                                padding: 10,
-                                marginBottom: 10,
-                                borderRadius: 4,
-                                width: `100%`,
-                                whiteSpace: 'nowrap',
-                                overflow: 'visible',
-                            }}>{quiz.questions[validQuestionId].option1}</div>
-                           <div style={{
-                                color: '#fff',
-                                padding: 10,
-                                marginBottom: 10,
-                                borderRadius: 4,
-                                width: `100%`,
-                                whiteSpace: 'nowrap',
-                                overflow: 'visible',
-                            }}>{quiz.questions[validQuestionId].option2}</div>
-                           <div style={{
-                                color: '#fff',
-                                padding: 10,
-                                marginBottom: 10,
-                                borderRadius: 4,
-                                width: `100%`,
-                                whiteSpace: 'nowrap',
-                                overflow: 'visible',
-                            }}>{quiz.questions[validQuestionId].option3}</div>
-                           <div style={{
-                                color: '#fff',
-                                padding: 10,
-                                marginBottom: 10,
-                                borderRadius: 4,
-                                width: `100%`,
-                                whiteSpace: 'nowrap',
-                                overflow: 'visible',
-                            }}>{quiz.questions[validQuestionId].option4}</div>
                           </>
                         ) : (
                             quizData.questions.map((q, index) => {
