@@ -25,15 +25,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             }
 
             let validatedMessage : Message | undefined = undefined;
-            // try {
-            //     const frameMessage = Message.decode(Buffer.from(req.body?.trustedData?.messageBytes || '', 'hex'));
-            //     const result = await client.validateMessage(frameMessage);
-            //     if (result.isOk() && result.value.valid) {
-            //         validatedMessage = result.value.message;
-            //     }
-            // } catch (e)  {
-            //     return res.status(400).send(`Failed to validate message: ${e}`);
-            // }
+            //try {
+            //    const frameMessage = Message.decode(Buffer.from(req.body?.trustedData?.messageBytes || '', 'hex'));
+            //    const result = await client.validateMessage(frameMessage);
+            //    if (result.isOk() && result.value.valid) {
+            //        validatedMessage = result.value.message;
+            //    }
+            //} catch (e)  {
+            //    return res.status(400).send(`Failed to validate message: ${e}`);
+            //}
 
             // notice: MAKE SURE TO CHANGE THIS
             const buttonId = 1;
@@ -41,12 +41,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             const answeredOption = await kv.hget(`quiz:${quizId}:complete`, `${fid}`)
             const answered = !!answeredOption;
             let complete = false;
-
-            if (buttonId > 0 && buttonId < 5 && questionId < quiz.questions.length && questionId > 0) {
+            //@ts-ignore
+            quiz.questions[questionId][`answer${buttonId}`] += 1;
+            
+            await kv.hset(`quiz:${quizId}`, quiz);
+            if (buttonId > 0 && buttonId < 5 && !results && !answered && questionId < quiz.questions.length && questionId > 0) {
                 let multi = kv.multi();
                 //@ts-ignore
                 quiz.questions[questionId][`answer${buttonId}`] += 1;
-                await kv.hset(`quiz:${quizId}`, quiz);
+                multi.hset(`quiz:${quizId}`, quiz);
                 multi.hset(`quiz:${quizId}:${questionId}`, {[fid]: buttonId});
                 if (questionId === quiz.questions.length - 1) {
                     multi.hset(`quiz:${quizId}:complete`, {[fid]: true});
