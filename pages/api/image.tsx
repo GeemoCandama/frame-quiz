@@ -78,9 +78,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     flexDirection: 'column',
                     padding: 20,
                 }}>
-                    <h2 style={{textAlign: 'center', color: 'lightgray'}}>{validQuestionId ? quiz.questions[validQuestionId].questionText : quiz.title}</h2>
+                    <h2 style={{textAlign: 'center', color: 'lightgray'}}>{validQuestionId != null ? quiz.questions[validQuestionId].questionText : quiz.title}</h2>
                     {
-                        (validQuestionId) ? (
+                        (validQuestionId != null) ? (
                           <>
                            <div style={{
                                 color: '#fff',

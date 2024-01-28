@@ -37,7 +37,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                questionOneText = quiz.questions[0].questionText;
             }
 
-            const imageUrl = `${process.env['HOST']}/api/image?id=${quiz.id}&qid=0&results=${results ? 'false': 'true'}&date=${Date.now()}${ fid > 0 ? `&fid=${fid}` : '' }`;
+            const imageUrl = `${process.env['HOST']}/api/image?id=${quiz.id}&qid=0&results=false&date=${Date.now()}${ fid > 0 ? `&fid=${fid}` : '' }`;
 
             // Return an HTML response
             res.setHeader('Content-Type', 'text/html');
@@ -52,9 +52,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           <meta name="fc:frame:image" content="${imageUrl}">
           <meta name="fc:frame:post_url" content="${process.env['HOST']}/api/vote?id=${quiz.id}&qid=0&results=false">
           <meta name="fc:frame:button:1" content="${questionOneOptions[0]}">
-          <meta name="fc:frame:button:1" content="${questionOneOptions[1]}">
-          <meta name="fc:frame:button:1" content="${questionOneOptions[2]}">
-          <meta name="fc:frame:button:1" content="${questionOneOptions[3]}">
+          <meta name="fc:frame:button:2" content="${questionOneOptions[1]}">
+          <meta name="fc:frame:button:3" content="${questionOneOptions[2]}">
+          <meta name="fc:frame:button:4" content="${questionOneOptions[3]}">
         </head>
         <body>
         </body>
