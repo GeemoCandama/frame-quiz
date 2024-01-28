@@ -45,9 +45,7 @@ export async function generateMetadata(
         "fc:frame:image": `${process.env['HOST']}/api/image?id=${id}`,
     };
     if(quiz.questions.length > 0) {
-    [quiz.questions[0].option1, quiz.questions[0].option2, quiz.questions[0].option3, quiz.questions[0].option4].filter(o => o !== "").map((option, index) => {
-        fcMetadata[`fc:frame:button:${index + 1}`] = option;
-    })
+        fcMetadata[`fc:frame:button:1`] = "Begin";
     }
 
     return {
