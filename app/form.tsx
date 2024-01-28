@@ -216,7 +216,7 @@ function QuestionOptions({quiz, questionIndex, onChange} : {quiz: Quiz, question
                         onChange={() => onChange(questionIndex, index)}
                         className="mr-2"
                     />
-                    {option}
+                    Begin
                 </label>
             ))}
         </div>

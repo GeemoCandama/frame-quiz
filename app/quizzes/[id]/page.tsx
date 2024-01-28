@@ -43,10 +43,8 @@ export async function generateMetadata(
         "fc:frame": "vNext",
         "fc:frame:post_url": `${process.env['HOST']}/api/vote?id=${id}`,
         "fc:frame:image": `${process.env['HOST']}/api/image?id=${id}`,
+        "fc:frame:button:1": "Begin",
     };
-    if(quiz.questions.length > 0) {
-        fcMetadata[`fc:frame:button:1`] = "Begin";
-    }
 
     return {
         title: quiz.title,
