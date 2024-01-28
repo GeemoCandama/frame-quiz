@@ -86,7 +86,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     flexDirection: 'column',
                     padding: 20,
                 }}>
-                    <h2 style={{textAlign: 'center', color: 'lightgray'}}>{validQuestionId != null ? quiz.questions[validQuestionId].questionText : quiz.title}</h2>
+                    <h3 style={{textAlign: 'center', color: 'lightgray'}}>{validQuestionId != null ? quiz.questions[validQuestionId].questionText : quiz.title}</h3>
                     {
                         (validQuestionId != null) ? (
                           <>
@@ -109,8 +109,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                             })
                         )
                     }
-                    {(showResults && fid > 0) ? <h3 style={{color: "darkgray"}}>Your Score: {userCorrectAnswers}/{quiz.questions.length}</h3> : ''}
-                    {showResults ? <h3 style={{color: "darkgray"}}>Average Score: {quizAverage} (Taken: {timesTaken})</h3> : ''}
+                    {(showResults && fid > 0) ? <h4 style={{color: "darkgray"}}>Your Score: {userCorrectAnswers}/{quiz.questions.length}</h4> : ''}
+                    {showResults ? <h4 style={{color: "darkgray"}}>Average Score: {quizAverage} (Taken: {timesTaken})</h4> : ''}
                 </div>
             </div>
             ,
