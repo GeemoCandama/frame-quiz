@@ -55,7 +55,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             const isValidQuestionId = newQuestionId < quiz.questions.length && newQuestionId > 0;
             
 
-            const imageUrl = `${process.env['HOST']}/api/image?id=${quiz.id}&qid=${newQuestionId}&results=${complete ? 'true' : 'false'}&date=${Date.now()}${ fid > 0 ? `&fid=${fid}` : '' }`;
+            const imageUrl = `${process.env['HOST']}/api/image?id=${quiz.id}&qid=${newQuestionId}&results=${complete || !isValidQuestionId ? 'true' : 'false'}&date=${Date.now()}${ fid > 0 ? `&fid=${fid}` : '' }`;
             let button1Text = "View Results";
             if (!answered && !results) {
                 button1Text = "Back"
