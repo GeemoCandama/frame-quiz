@@ -99,7 +99,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                                 width: `100%`,
                                 whiteSpace: 'nowrap',
                                 overflow: 'visible',
-                            }}>{quiz.questions[validQuestionId].option1}</div>
+                            }}>{quiz.questions[validQuestionId].option2}</div>
                            <div style={{
                                 color: '#fff',
                                 padding: 10,
@@ -108,7 +108,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                                 width: `100%`,
                                 whiteSpace: 'nowrap',
                                 overflow: 'visible',
-                            }}>{quiz.questions[validQuestionId].option1}</div>
+                            }}>{quiz.questions[validQuestionId].option3}</div>
                            <div style={{
                                 color: '#fff',
                                 padding: 10,
@@ -117,7 +117,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                                 width: `100%`,
                                 whiteSpace: 'nowrap',
                                 overflow: 'visible',
-                            }}>{quiz.questions[validQuestionId].option1}</div>
+                            }}>{quiz.questions[validQuestionId].option4}</div>
                           </>
                         ) : (
                             quizData.questions.map((q, index) => {
