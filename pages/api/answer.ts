@@ -42,11 +42,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             const answered = !!answeredOption;
             let complete = false;
 
-            if (buttonId > 0 && buttonId < 5 && !results && !answered && questionId < quiz.questions.length && questionId > 0) {
+            if (buttonId > 0 && buttonId < 5 && questionId < quiz.questions.length && questionId > 0) {
                 let multi = kv.multi();
                 //@ts-ignore
                 quiz.questions[questionId][`answer${buttonId}`] += 1;
-                multi.hset(`quiz:${quizId}`, quiz);
+                await kv.hset(`quiz:${quizId}`, quiz);
                 multi.hset(`quiz:${quizId}:${questionId}`, {[fid]: buttonId});
                 if (questionId === quiz.questions.length - 1) {
                     multi.hset(`quiz:${quizId}:complete`, {[fid]: true});
