@@ -35,7 +35,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 return res.status(400).send(`Failed to validate message: ${e}`);
             }
 
-            const buttonId = validatedMessage?.data?.frameActionBody?.buttonIndex || 0;
+            // notice: MAKE SURE TO CHANGE THIS
+            const buttonId = validatedMessage?.data?.frameActionBody?.buttonIndex || 1;
             const fid = validatedMessage?.data?.fid || 0;
             const answeredOption = await kv.hget(`quiz:${quizId}:complete`, `${fid}`)
             const answered = !!answeredOption;
