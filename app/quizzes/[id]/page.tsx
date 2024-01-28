@@ -26,41 +26,43 @@ async function getQuiz(id: string): Promise<Quiz> {
     }
 }
 
-// type Props = {
-//     params: { id: string }
-//     searchParams: { [key: string]: string | string[] | undefined }
-// }
+type Props = {
+    params: { id: string }
+    searchParams: { [key: string]: string | string[] | undefined }
+}
 
-// export async function generateMetadata(
-//     { params, searchParams }: Props,
-//     parent: ResolvingMetadata
-// ): Promise<Metadata> {
-//     // read route params
-//     const id = params.id
-//     const poll = await getPoll(id)
-// 
-//     const fcMetadata: Record<string, string> = {
-//         "fc:frame": "vNext",
-//         "fc:frame:post_url": `${process.env['HOST']}/api/vote?id=${id}`,
-//         "fc:frame:image": `${process.env['HOST']}/api/image?id=${id}`,
-//     };
-//     [poll.option1, poll.option2, poll.option3, poll.option4].filter(o => o !== "").map((option, index) => {
-//         fcMetadata[`fc:frame:button:${index + 1}`] = option;
-//     })
-// 
-// 
-//     return {
-//         title: poll.title,
-//         openGraph: {
-//             title: poll.title,
-//             images: [`/api/image?id=${id}`],
-//         },
-//         other: {
-//             ...fcMetadata,
-//         },
-//         metadataBase: new URL(process.env['HOST'] || '')
-//     }
-// }
+export async function generateMetadata(
+    { params, searchParams }: Props,
+    parent: ResolvingMetadata
+): Promise<Metadata> {
+    // read route params
+    const id = params.id
+    const quiz = await getQuiz(id)
+
+    const fcMetadata: Record<string, string> = {
+        "fc:frame": "vNext",
+        "fc:frame:post_url": `${process.env['HOST']}/api/vote?id=${id}`,
+        "fc:frame:image": `${process.env['HOST']}/api/image?id=${id}`,
+    };
+    if(quiz.questions.length > 0) {
+    [quiz.questions[0].option1, quiz.questions[0].option2, quiz.questions[0].option3, quiz.questions[0].option4].filter(o => o !== "").map((option, index) => {
+        fcMetadata[`fc:frame:button:${index + 1}`] = option;
+    })
+    }
+
+    return {
+        title: quiz.title,
+        openGraph: {
+            title: quiz.title,
+            images: [`/api/image?id=${id}`],
+        },
+        other: {
+            ...fcMetadata,
+        },
+        metadataBase: new URL(process.env['HOST'] || '')
+    }
+}
+
 // function getMeta(
 //     poll: Poll
 // ) {
