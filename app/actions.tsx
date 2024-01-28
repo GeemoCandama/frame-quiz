@@ -28,7 +28,7 @@ export async function saveQuiz(quiz: Quiz, formData: FormData) {
   }
 
   await kv.hset(`quiz:${quiz.id}`, quiz);
-  await kv.zadd("quiz_by_date", {
+  await kv.zadd("quizzes_by_date", {
     score: Number(newQuiz.created_at),
     member: newQuiz.id,
   });

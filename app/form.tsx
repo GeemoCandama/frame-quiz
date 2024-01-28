@@ -2,7 +2,7 @@
 
 import clsx from "clsx";
 import {useOptimistic, useRef, useState, useTransition} from "react";
-import {answerQuiz, redirectToQuizzes, saveQuiz, votePoll} from "./actions";
+import {answerQuiz, redirectToQuizzes, saveQuiz} from "./actions";
 import { v4 as uuidv4 } from "uuid";
 import {Quiz, Question} from "./types";
 import {useRouter, useSearchParams} from "next/navigation";
@@ -202,24 +202,24 @@ export function QuizCreateForm() {
   );
 }
 
-// function PollOptions({poll, onChange} : {poll: Poll, onChange: (index: number) => void}) {
-//     return (
-//         <div className="mb-4 text-left">
-//             {[poll.option1, poll.option2, poll.option3, poll.option4].filter(e => e !== "").map((option, index) => (
-//                 <label key={index} className="block">
-//                     <input
-//                         type="radio"
-//                         name="poll"
-//                         value={option}
-//                         onChange={() => onChange(index + 1)}
-//                         className="mr-2"
-//                     />
-//                     {option}
-//                 </label>
-//             ))}
-//         </div>
-//     );
-// }
+function QuestionOptions({quiz, questionIndex, onChange} : {quiz: Quiz, questionIndex: number, onChange: (questionIndex: number, optionIndex: number) => void}) {
+    return (
+        <div className="mb-4 text-left">
+            {[quiz.questions[questionIndex].option1, quiz.questions[questionIndex].option2, quiz.questions[questionIndex].option3, quiz.questions[questionIndex].option4].filter(e => e !== "").map((option, index) => (
+                <label key={index} className="block">
+                    <input
+                        type="radio"
+                        name="quiz"
+                        value={option}
+                        onChange={() => onChange(questionIndex, index)}
+                        className="mr-2"
+                    />
+                    {option}
+                </label>
+            ))}
+        </div>
+    );
+}
 
 function QuizResults({quiz} : {quiz: Quiz}) {
      return (
@@ -230,7 +230,10 @@ function QuizResults({quiz} : {quiz: Quiz}) {
  }
 
 export function QuizAnswerForm({quiz, viewResults}: { quiz: Quiz, viewResults?: boolean }) {
-    const [selectedOption, setSelectedOption] = useState(-1);
+    const [selectedAnswers, setSelectedAnswers] = useState(
+        new Array(quiz.questions.length).fill(null)
+    );
+    const [currentQuestionIndex, setCurrenctQuestionIndex] = useState(0);
     const router = useRouter();
     const searchParams = useSearchParams();
     viewResults = true;     // Only allow taking quiz via the api
@@ -252,54 +255,87 @@ export function QuizAnswerForm({quiz, viewResults}: { quiz: Quiz, viewResults?: 
         },
     );
 
-//    const handleVote = (index: number) => {
-//        setSelectedOption(index)
-//    };
-//
+    const handleAnswer = (questionIndex: number, optionIndex: number) => {
+        const newAnswers = [...selectedAnswers];
+        newAnswers[questionIndex] = optionIndex;
+        setSelectedAnswers(newAnswers);
+
+        if (currentQuestionIndex < quiz.questions.length - 1) {
+            setCurrenctQuestionIndex(currentQuestionIndex + 1);
+        } else {
+            formRef.current?.dispatchEvent(new Event('submit', { cancelable: true }));
+        }
+    };
+
+    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+
+        let newQuiz = {
+            ...quiz,
+            questions: quiz.questions.map((question, index) => {
+                return incrementAnswer(question, selectedAnswers[index]);
+            }),
+        };
+
+        startTransition(async () => {
+            mutate({
+                newQuiz,
+                pending: false,
+                answered: true,
+            });
+
+            // Process the quiz submission
+            await answerOnQuiz(selectedAnswers);  // Assuming this function processes the answers
+            await redirectToQuizzes();
+        });
+    };
+
     return (
         <div className="max-w-sm rounded overflow-hidden shadow-lg p-4 m-4">
             <div className="font-bold text-xl mb-2">{quiz.title}</div>
             <form
                 className="relative my-8"
                 ref={formRef}
-                action={ () => voteOnPoll(selectedOption)}
-                onSubmit={(event) => {
-                    event.preventDefault();
-                    let formData = new FormData(event.currentTarget);
-                    let newQuiz = {
-                        ...quiz,
-                    };
-
-                    // @ts-ignore
-                    newQuiz[`votes${selectedOption}`] += 1;
-
-                    formRef.current?.reset();
-                    startTransition(async () => {
-                        mutate({
-                            newQuiz,
-                            pending: false,
-                            answered: true,
-                        });
-
-//                        await redirectToPolls();
-                        // await votePoll(newPoll, selectedOption);
-                    });
-                }}
+                onSubmit={handleSubmit}
             >
-                {state.showResults ? <QuizResults quiz={quiz}/> : <PollOptions poll={poll} onChange={handleVote}/>}
+                {state.showResults ? <QuizResults quiz={quiz}/> : <QuestionOptions quiz={quiz} questionIndex={currentQuestionIndex} onChange={handleAnswer}/>}
                 {state.showResults ? <button
                         className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
                         type="submit"
                     >Back</button> :
                     <button
-                        className={"bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" + (selectedOption < 1 ? " cursor-not-allowed" : "")}
+                        className={"bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"}
                         type="submit"
-                        disabled={selectedOption < 1}
+                        disabled={selectedAnswers.length > 0 ? selectedAnswers[0] === null : true}
                     >
-                        Vote
+                        Answer
                     </button>
                 }
             </form>
         </div>
 );
 }
+// (selectedOption < 1 ? " cursor-not-allowed" : "")
+
+function incrementAnswer(question: Question, selectedAnswerIndex: number): Question {
+  let updatedQuestion = { ...question };
+  switch (selectedAnswerIndex) {
+    case 0:
+      updatedQuestion.answer1 += 1;
+      break;
+    case 1:
+      updatedQuestion.answer2 += 1;
+      break;
+    case 2:
+      updatedQuestion.answer3 += 1;
+      break;
+    case 3:
+      updatedQuestion.answer4 += 1;
+      break;
+    default:
+      // Handle invalid index, if necessary
+      break;
+  }
+  return updatedQuestion;
+}
+
