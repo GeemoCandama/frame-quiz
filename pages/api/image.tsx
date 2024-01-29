@@ -43,9 +43,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         // let votedOption: number | null = null
         let userCorrectAnswers = 0;
         if (showResults && fid > 0) {
+            const multi = kv.multi();
+            for (let i = 0; i < quiz.questions.length; i++) {
+                multi.hget(`quiz:${quizId}:${i}`, `${fid}`);
+            }
+            const userAnswers = await multi.exec();
             for (let i = 0; i < quiz.questions.length; i ++ ) {
                 const correctAnswer = quiz.questions[i].correctAnswerIndex;
-                let userAnswer = await kv.hget(`quiz:${quizId}:${i}`, `${fid}`)
+                let userAnswer = userAnswers[i];
 
                 if (correctAnswer === userAnswer) {
                     userCorrectAnswers++;
